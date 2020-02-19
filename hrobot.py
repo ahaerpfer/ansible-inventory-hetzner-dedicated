@@ -20,9 +20,10 @@ DOCUMENTATION = r"""
         - Uses a YAML configuration file that ends with hrobot.(yml|yaml).
     extends_documentation_fragment:
         - constructed
+        - inventory_cache
     options:
         plugin:
-            description: Marks this as an instance of the "hdedicated" plugin
+            description: Marks this as an instance of the "hrobot" plugin
             required: true
             choices: ["hrobot"]
         api_user:
@@ -105,7 +106,7 @@ class RobotAPI:
             raise AnsibleError("Error while fetching %s: %s" % (api_url, to_native(e)))
 
 
-class InventoryModule(BaseInventoryPlugin, Constructable):
+class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
     NAME = "hrobot"
 
@@ -114,16 +115,51 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             (self.NAME + ".yaml", self.NAME + ".yml")
         )
 
-    def parse(self, inventory, loader, path, cache=True):
-        super(InventoryModule, self).parse(inventory, loader, path, cache)
-        config = self._read_config_data(path)
-
-        # Add a default top group 'hetzner'
-        self.inventory.add_group(group="hetzner")
-
+    def _read_servers_from_API(self):
         servers = RobotAPI(
             self.get_option("api_user"), self.get_option("api_password")
         ).get_servers()
+        return servers
+
+    def parse(self, inventory, loader, path, cache=True):
+        super(InventoryModule, self).parse(inventory, loader, path, cache)
+        config = self._read_config_data(path)
+        cache_key = self.get_cache_key(path)
+
+        # `cache` may be True or False at this point to indicate if the
+        # inventory is being refreshed.  Get the user's cache option too
+        # to see if we should save the cache when it is changing.
+        user_cache_setting = self.get_option("cache")
+
+        # Read if the user has caching enabled and the cache isn't being
+        # refreshed.
+        attempt_to_read_cache = user_cache_setting and cache
+
+        # Update if the user has caching enabled and the cache is being
+        # refreshed; update this value to True if the cache has expired below.
+        cache_needs_update = user_cache_setting and not cache
+
+        # Attempt to read the cache if inventory isn't being refreshed and
+        # the user has caching enabled.
+        if attempt_to_read_cache:
+            try:
+                servers = self._cache[cache_key]
+            except KeyError:
+                # This occurs if the cache_key is not in the cache or if
+                # the cache_key expired, so the cache needs to be updated.
+                servers = self._read_servers_from_API()
+                cache_needs_update = True
+        else:
+            servers = self._read_servers_from_API()
+
+        if cache_needs_update:
+            self._cache[cache_key] = servers
+
+        self.populate(servers)
+
+    def populate(self, servers):
+        # Add a default top group 'hetzner'
+        self.inventory.add_group(group="hetzner")
 
         for server in servers:
             s = server["server"]

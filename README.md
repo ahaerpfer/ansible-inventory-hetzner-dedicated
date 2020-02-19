@@ -87,15 +87,48 @@ vault key:
 $ ansible-inventory -i demo.hrobot.yaml --list --vault-id demo@prompt
 ```
 
+## Caching
+
+To reduce the number of API requests the plugin is able to locally cache
+inventory data.  This first requires some general configuration in
+`ansible.cfg`:
+
+```ini
+[inventory]
+# Which cache plugin to use.
+cache_plugin=jsonfile
+# Where to store cached data.
+cache_connection=./.cache
+# Lifetime of cached data (default 3600).
+cache_timeout=1800
+```
+
+After that actual caching can be enabled on a per-inventory basis, in the
+respective YAML file, e.g.:
+
+```yaml
+plugin: hrobot
+cache: True
+api_user: ...
+# [...]
+```
+
+For more details and a list of available cache plugins see the
+[documentation][cache].
+
 ## References
 
-* [Developing dynamic inventory][inventory], Ansible documentation.
+* [Inventory plugins][inventory], Ansible documentation.
+* [Developing dynamic inventory][inventory-dev], Ansible documentation.
 * [Adding modules and plugins locally][dev-local], Ansible documentation.
+* [Cache plugins][cache], Ansible documentation.
 * [Managing Meaningful Inventories][inv-slides], AnsibleFest2019, slides (PDF)
 * [Ansible Custom Inventory Plugin - a hands-on, quick start guide][inv-blog], blog post.
 
 [robot-api]: https://robot.your-server.de/doc/webservice/en.html
-[inventory]: https://docs.ansible.com/ansible/latest/dev_guide/developing_inventory.html
+[inventory]: https://docs.ansible.com/ansible/latest/plugins/inventory.html
+[inventory-dev]: https://docs.ansible.com/ansible/latest/dev_guide/developing_inventory.html
+[cache]: https://docs.ansible.com/ansible/latest/plugins/cache.html
 [dev-local]: https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.html
 [inv-slides]: https://www.ansible.com/hubfs//AnsibleFest%20ATL%20Slide%20Decks/AnsibleFest%202019%20-%20Managing%20Meaningful%20Inventories.pdf
 [inv-blog]: https://termlen0.github.io/2019/11/16/observations/
