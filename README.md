@@ -103,7 +103,7 @@ cache_connection=./.cache
 cache_timeout=1800
 ```
 
-After that actual caching can be enabled on a per-inventory basis, in the
+After that actual caching can be enabled on a per-inventory basis in the
 respective YAML file, e.g.:
 
 ```yaml
@@ -114,7 +114,7 @@ api_user: ...
 ```
 
 For more details and a list of available cache plugins see the
-[documentation][cache].
+related [Ansible documentation][cache].
 
 ## References
 
