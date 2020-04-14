@@ -50,6 +50,10 @@ plugin: hrobot
 api_user: "<your API user"
 api_password: "<your API PW>"
 
+groups:
+  proxy_hosts: inventory_hostname.startswith("proxy")
+  staging_hosts: inventory_hostname is regex(".*\.staging\.example\.com")
+
 keyed_groups:
   - key: product | lower
     prefix: type
@@ -57,13 +61,44 @@ keyed_groups:
     separator: ""
 ```
 
-Specifying any keyed groups is optional; all server attributes returned by
-the [Robot API][robot-api] also end up as hostvars.
-The following will print out the whole inventory in JSON format:
+The following will then print out the whole inventory in JSON format:
 
 ```shell
 $ ansible-inventory -i demo.hrobot.yaml --list
 ```
+
+### Constructing groups
+
+From the raw inventory data of the API you can construct additional host
+groups as in the example config above:
+
+* `groups` based on Jinja2 conditionals, e.g. regexes.
+* `keyed_groups` based on host variables provided by the API.
+
+Specifying any additional groups is optional; all host attributes
+returned by the [Robot API][robot-api] also end up as hostvars.  Here is
+an example what variables we get for each host:
+
+```json
+"server.example.com": {
+    "ansible_ssh_user": "root",
+    "cancelled": false,
+    "dc": "FSN1-DC8",
+    "flatrate": true,
+    "jobdir": "/tmp",
+    "paid_until": "2099-12-31",
+    "product": "EX41S-SSD",
+    "server_ip": "192.0.2.10",
+    "server_number": 987654,
+    "status": "ready",
+    "throttled": false,
+    "traffic": "unlimited"
+}
+```
+
+For more details see the ["constructed" inventory plugin][grouping].
+
+### Security
 
 For added security credentials in the config file can be encrypted via
 `ansible-vault`, e.g.:
@@ -121,6 +156,7 @@ related [Ansible documentation][cache].
 * [Inventory plugins][inventory], Ansible documentation.
 * [Developing dynamic inventory][inventory-dev], Ansible documentation.
 * [Adding modules and plugins locally][dev-local], Ansible documentation.
+* [Using Jinja2 to construct vars and groups][grouping], Ansible documentation.
 * [Cache plugins][cache], Ansible documentation.
 * [Managing Meaningful Inventories][inv-slides], AnsibleFest2019, slides (PDF)
 * [Ansible Custom Inventory Plugin - a hands-on, quick start guide][inv-blog], blog post.
@@ -128,6 +164,7 @@ related [Ansible documentation][cache].
 [robot-api]: https://robot.your-server.de/doc/webservice/en.html
 [inventory]: https://docs.ansible.com/ansible/latest/plugins/inventory.html
 [inventory-dev]: https://docs.ansible.com/ansible/latest/dev_guide/developing_inventory.html
+[grouping]: https://docs.ansible.com/ansible/latest/plugins/inventory/constructed.html
 [cache]: https://docs.ansible.com/ansible/latest/plugins/cache.html
 [dev-local]: https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.html
 [inv-slides]: https://www.ansible.com/hubfs//AnsibleFest%20ATL%20Slide%20Decks/AnsibleFest%202019%20-%20Managing%20Meaningful%20Inventories.pdf

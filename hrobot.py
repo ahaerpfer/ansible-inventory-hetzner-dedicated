@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Andreas Härpfer
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
 
@@ -59,12 +59,17 @@ api_password: !vault |
           36363035323864343032383438326533636437333531633162386236353535386537
 
 
-# Additionally group by product with prefix, e.g. "type_ex41" and by data
-# center location without a prefix, e.g. "FSN1_DC4".  Jinja filters can be
-# used for additional transformations.
+# Additionally group by Jinja2 expression or by host variable with prefix,
+# e.g. "type_ex41" and by data center location without a prefix, e.g.
+# "FSN1_DC4".  Jinja filters can be used for additional transformations.
 # `prefix` defaults to "", `separator` defaults to "_".
 
 plugin: hrobot
+
+groups:
+  proxy_hosts: inventory_hostname.startswith("proxy")
+  staging_hosts: inventory_hostname is regex(".*\.staging\.example\.com")
+
 keyed_groups:
   - key: product | lower
     prefix: type
